@@ -194,6 +194,15 @@ func igAPI(url string) (imgs []interface{}) {
 	return
 }
 
+// igAPIWorker
+func igAPIWorker(url string) (imgs []interface{}) {
+	rURL := "https://ins.maruq.workers.dev/?url=" + url
+	res := utils.Minireq.GetBody(rURL, nil, nil)
+	resJSON := utils.DataConvert.String2Map(res)
+	imgs = resJSON["data"].([]interface{})
+	return
+}
+
 // imgURLAnalysis 读取 img 标签
 func imgURLAnalysis(imgRule string, taskM *taskManage) {
 	url := <-taskM.GChan
@@ -263,7 +272,8 @@ func PicData(urlType, url string) (imgs []interface{}) {
 	case strings.Contains(urlType, "ameblo"):
 		imgs = abemaAPI(url)
 	case strings.Contains(urlType, "instagram"):
-		imgs = igAPI(url)
+		// imgs = igAPI(url)
+		imgs = igAPIWorker(url)
 	case strings.Contains(urlType, "thetv"):
 		aRule := "//ul[@class='list_thumbnail']/li/a[@alt]"
 		imgRule := "//figure/a/img|//figure/img"
