@@ -24,15 +24,15 @@ func (f *myLoggerFormat) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 // Logger 日志中间件
-func Logger(mode string) gin.HandlerFunc {
+func Logger(mode int) gin.HandlerFunc {
 	logger := logrus.New()
 
 	// 输出到文件
 	switch mode {
-	case "debug":
+	case 0:
 		logger.Out = os.Stdout
 		logger.SetLevel(logrus.DebugLevel)
-	case "release":
+	case 1:
 		currentPath := utils.FileCtl.LocalPath(mode)
 		logPath := filepath.Join(currentPath, "logs")
 		logpath := utils.FileCtl.Create(logPath)
@@ -42,7 +42,7 @@ func Logger(mode string) gin.HandlerFunc {
 		logger.Out = accessFile
 		logger.SetLevel(logrus.InfoLevel)
 	default:
-		log.Fatal("Mode: debug / release")
+		log.Fatal("Mode: 0 debug / 1 release")
 	}
 
 	logger.SetFormatter(new(myLoggerFormat))
@@ -76,16 +76,16 @@ func Logger(mode string) gin.HandlerFunc {
 }
 
 // Run 执行服务
-func Run(mode string) {
+func Run(mode int) {
 	listenAddr := "localhost:8373"
 
 	service.DBTest()
 	log.Println("Listen: " + listenAddr)
 
 	switch mode {
-	case "debug":
+	case 0:
 		gin.SetMode(gin.DebugMode)
-	case "release":
+	case 1:
 		gin.SetMode(gin.ReleaseMode)
 	default:
 		log.Fatal("Mode: debug / release")

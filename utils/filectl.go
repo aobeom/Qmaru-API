@@ -73,15 +73,15 @@ func (wr *FileCtlBasic) CheckExist(path string) bool {
 }
 
 // LocalPath 获取当前路径
-func (wr *FileCtlBasic) LocalPath(mode string) (path string) {
+func (wr *FileCtlBasic) LocalPath(mode int) (path string) {
 	switch {
-	case mode == "release":
+	case mode == 1:
 		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 		if err != nil {
 			log.Panic(err)
 		}
 		path = strings.Replace(dir, "\\", "/", -1)
-	case mode == "debug" || mode == "":
+	case mode == 0:
 		dir, _ := os.Getwd()
 		path = strings.Replace(dir, "\\", "/", -1)
 	}

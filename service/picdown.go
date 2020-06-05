@@ -135,7 +135,7 @@ func mdprAPI(url string) (imgs []interface{}) {
 		return
 	}
 	response := utils.Minireq.GetBody(realURL, nil, nil)
-	imgs = utils.DataConvert.String2Array(response).([]interface{})
+	imgs = utils.DataConvert.String2Array(response)
 	return
 }
 

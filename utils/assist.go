@@ -12,7 +12,7 @@ import (
 )
 
 // UserAgent 全局 UA
-var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"
+var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36"
 
 // S5Proxy 设置 s5 代理
 func S5Proxy(proxyURL string) (transport *http.Transport) {
