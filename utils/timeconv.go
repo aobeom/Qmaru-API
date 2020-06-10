@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// TimeCtlBasic 提供基本 HTTP 请求
+// TimeCtlBasic 时间转换
 type TimeCtlBasic struct{}
 
 // TimeCtl 初始化
