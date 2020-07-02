@@ -1,9 +1,9 @@
 package service
 
 import (
-	"qmaru-api/utils"
 	"github.com/antchfx/htmlquery"
 	"net/url"
+	"qmaru-api/utils"
 	"strings"
 	"time"
 
@@ -70,14 +70,14 @@ func YahooTV(kw, code string) (tvurl string, tvinfo []map[string]string) {
 
 		aTag := htmlquery.FindOne(node, `./div[@class="rightarea"]/p[1]/a`)
 		title := htmlquery.InnerText(aTag)
-		url := htmlquery.SelectAttr(aTag, "href")
+		yurl := htmlquery.SelectAttr(aTag, "href")
 
 		spanTag := htmlquery.FindOne(node, `./div[@class="rightarea"]/p[2]/span[1]`)
 		station := htmlquery.InnerText(spanTag)
 
 		d["date"] = udate
 		d["time"] = utime
-		d["url"] = yahooSite + url
+		d["url"] = yahooSite + yurl
 		d["title"] = title
 		d["station"] = station
 		tvinfo = append(tvinfo, d)

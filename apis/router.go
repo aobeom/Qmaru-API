@@ -111,5 +111,5 @@ func Run(mode int) {
 		v1.POST("/radiko", Radiko)
 	}
 
-	router.Run(listenAddr)
+	_ = router.Run(listenAddr)
 }

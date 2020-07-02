@@ -76,16 +76,16 @@ func radikoJSKey(client http.Client) (authkey string) {
 
 // radikoChunklist 提取播放地址
 func radikoChunklist(playlist string) (url string) {
-	regURLRule := regexp.MustCompile(`https\:\/\/.*?\.m3u8`)
-	urlList := regURLRule.FindAllString(string(playlist), -1)
+	regURLRule := regexp.MustCompile(`https://.*?\.m3u8`)
+	urlList := regURLRule.FindAllString(playlist, -1)
 	url = urlList[0]
 	return
 }
 
 // radikoAAC 提取 AAC 文件的地址
 func radikoAAC(m3u8 string) (urls []string) {
-	regURLRule := regexp.MustCompile(`https\:\/\/.*?\.aac`)
-	urls = regURLRule.FindAllString(string(m3u8), -1)
+	regURLRule := regexp.MustCompile(`https://.*?\.aac`)
+	urls = regURLRule.FindAllString(m3u8, -1)
 	return
 }
 
@@ -195,8 +195,8 @@ func rEngine(urls []string, savePath string) {
 			break
 		}
 		tmp, _ := <-d
-		offset, _ := aacFile.Seek(0, os.SEEK_END)
-		aacFile.WriteAt(tmp, offset)
+		offset, _ := aacFile.Seek(0, 2)
+		_, _ = aacFile.WriteAt(tmp, offset)
 		num++
 	}
 
@@ -222,9 +222,6 @@ func RadioFromDB(name string) (data map[string]interface{}) {
 // Radio2DB 保存 Radio 的数据
 func Radio2DB(name, url string) {
 	radikoColl := DataBase.Collection("radiko")
-	// var rdata radioJSON
-	// rdata.name = name
-	// rdata.url = url
 	rdata := radioJSON{
 		Name: name,
 		URL:  url,

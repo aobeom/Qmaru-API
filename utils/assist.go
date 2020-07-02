@@ -3,9 +3,9 @@ package utils
 import (
 	"io"
 	"io/ioutil"
-	"net/http"
-	"net"
 	"log"
+	"net"
+	"net/http"
 	"time"
 
 	"golang.org/x/net/proxy"
@@ -16,7 +16,7 @@ var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (K
 
 // S5Proxy 设置 s5 代理
 func S5Proxy(proxyURL string) (transport *http.Transport) {
-	dialer, err := proxy.SOCKS5("tcp", proxyURL,
+	_, err := proxy.SOCKS5("tcp", proxyURL,
 		nil,
 		&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -28,7 +28,6 @@ func S5Proxy(proxyURL string) (transport *http.Transport) {
 	}
 	transport = &http.Transport{
 		Proxy:               nil,
-		Dial:                dialer.Dial,
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 	return

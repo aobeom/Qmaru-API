@@ -18,7 +18,7 @@ func Radiko(c *gin.Context) {
 	c.Header("Content-Typ", "application/json")
 
 	var reqData radioInfo
-	c.BindJSON(&reqData)
+	_ = c.BindJSON(&reqData)
 
 	// 构造 JSON 数据
 	station := reqData.Station

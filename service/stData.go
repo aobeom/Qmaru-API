@@ -16,6 +16,11 @@ func STData() (data []map[string]interface{}) {
 		{
 			{Key: "$limit", Value: 15},
 		},
+		{
+			{Key: "$project", Value: bson.D{
+				{Key: "_id", Value: 0},
+			}},
+		},
 	}
 	data = MAggregate(stColl, argStage)
 	return

@@ -29,19 +29,19 @@ func (dc *DataConvBasic) Map2String(data interface{}) []byte {
 
 // String2Maps 读取 JSON 转换为 []map
 func (dc *DataConvBasic) String2Maps(data []byte) (m []map[string]interface{}) {
-	json.Unmarshal(data, &m)
+	_ = json.Unmarshal(data, &m)
 	return
 }
 
 // String2Map 读取 JSON 转换为 map
 func (dc *DataConvBasic) String2Map(data []byte) (m map[string]interface{}) {
-	json.Unmarshal(data, &m)
+	_ = json.Unmarshal(data, &m)
 	return
 }
 
 // String2Array 读取 JSON 转换为数组
 func (dc *DataConvBasic) String2Array(data []byte) (m []interface{}) {
-	json.Unmarshal(data, &m)
+	_ = json.Unmarshal(data, &m)
 	return
 }
 

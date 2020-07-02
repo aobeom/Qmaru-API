@@ -103,16 +103,16 @@ func MFind(collection *mongo.Collection, limit int64, skip int64, filter bson.D)
 		var bsonData bson.D
 		var jsonData map[string]interface{}
 		var tmpB []byte
-		cur.Decode(&bsonData)
+		_ = cur.Decode(&bsonData)
 		tmpB, _ = bson.MarshalExtJSON(bsonData, true, true)
-		json.Unmarshal(tmpB, &jsonData)
+		_ = json.Unmarshal(tmpB, &jsonData)
 		results = append(results, jsonData)
 	}
 
 	if err := cur.Err(); err != nil {
 		log.Panic(err)
 	}
-	cur.Close(context.TODO())
+	_ = cur.Close(context.TODO())
 	return
 }
 
@@ -128,6 +128,9 @@ func MDelete(collection *mongo.Collection, filter bson.D) int64 {
 // MAggregate 聚合查询
 func MAggregate(collection *mongo.Collection, argStage []bson.D) []map[string]interface{} {
 	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline(argStage))
+	if err != nil {
+		log.Panic(err)
+	}
 	var results []map[string]interface{}
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		log.Panic(err)

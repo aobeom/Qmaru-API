@@ -27,7 +27,7 @@ func NewFileCtl() (n *FileCtlBasic) {
 
 // Write 写入文件
 func (wr *FileCtlBasic) Write(f string, data []byte) {
-	err := ioutil.WriteFile(f, []byte(data), 0666)
+	err := ioutil.WriteFile(f, data, 0666)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -49,7 +49,7 @@ func (wr *FileCtlBasic) Create(folderPath string) string {
 		return folderPath
 	}
 	if os.IsNotExist(err) {
-		os.Mkdir(folderPath, os.ModePerm)
+		_ = os.Mkdir(folderPath, os.ModePerm)
 		return folderPath
 	}
 	return folderPath
