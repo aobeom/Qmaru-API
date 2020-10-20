@@ -51,6 +51,8 @@ func MClient(host string, port string) *mongo.Client {
 	address := host + ":" + port
 
 	clientOptions := options.Client().ApplyURI("mongodb://" + address)
+	clientOptions.SetMaxPoolSize(64)
+	clientOptions.SetMinPoolSize(8)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Panic(err)
