@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/antchfx/htmlquery"
-	"net/url"
 	"qmaru-api/utils"
 	"strings"
 	"time"
@@ -11,11 +10,11 @@ import (
 )
 
 type programJSON struct {
-	Keyword   string				`bson:"keyword"`
-	AreaCode  string				`bson:"area_code"`
-	YahooURL  string				`bson:"yahoo_url"`
-	ProgInfo  []map[string]string	`bson:"prog_info"`
-	CreatedAt time.Time				`bson:"created_at"`
+	Keyword   string              `bson:"keyword"`
+	AreaCode  string              `bson:"area_code"`
+	YahooURL  string              `bson:"yahoo_url"`
+	ProgInfo  []map[string]string `bson:"prog_info"`
+	CreatedAt time.Time           `bson:"created_at"`
 }
 
 // ProgramFromDB 读取 Program 的数据
@@ -50,17 +49,27 @@ func Program2DB(kw, ac, tvurl string, tvinfo []map[string]string) {
 func YahooTV(kw, code string) (tvurl string, tvinfo []map[string]string) {
 	yahooSite := "https://tv.yahoo.co.jp"
 	apiURL := yahooSite + "/search/category/"
-	data := url.Values{}
-	data.Add("q", kw)
-	data.Add("a", code)
-	data.Add("oa", "1")
-	data.Add("tv", "1")
-	data.Add("bsd", "1")
-	reader := strings.NewReader(data.Encode())
-	resURL, resBody := utils.YahooGet(apiURL, reader)
-	tvurl = resURL
 
-	doc, _ := htmlquery.Parse(strings.NewReader(string(resBody)))
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
+
+	data := utils.MiniFormData{
+		"q":   kw,
+		"a":   code,
+		"oa":  "1",
+		"tv":  "1",
+		"bsd": "1",
+	}
+
+	utils.Minireq.NoRedirect()
+	tRes := utils.Minireq.Post(apiURL, headers, data)
+	tLocation, _ := tRes.RawRes.Location()
+	tRealURL := tLocation.String()
+	res := utils.Minireq.Get(tRealURL)
+	tvurl = tRealURL
+
+	doc, _ := htmlquery.Parse(strings.NewReader(string(res.RawData())))
 	nodes := htmlquery.Find(doc, `//ul[@class="programlist"]/li`)
 	for _, node := range nodes {
 		d := make(map[string]string)

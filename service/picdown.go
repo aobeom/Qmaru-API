@@ -1,7 +1,6 @@
 package service
 
 import (
-	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -95,20 +94,23 @@ func abemaAPI(url string) (imgs []interface{}) {
 	apiURL := "https://blogimgapi.ameba.jp/read_ahead/get.jsonp"
 	imgPrefix := "http://stat.ameba.jp"
 
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
 
-	params := make(map[string]string)
-	params["ameba_id"] = owner
-	params["entry_id"] = entryID
-	params["old"] = "true"
-	params["sp"] = "false"
+	params := utils.MiniParams{
+		"ameba_id": owner,
+		"entry_id": entryID,
+		"old":      "true",
+		"sp":       "false",
+	}
 
-	res := utils.Minireq.GetBody(apiURL, headers, params)
-	resReduce1 := strings.ReplaceAll(string(res), "Amb.Ameblo.image.Callback(", "")
+	// res := utils.Minireq.GetBody(apiURL, headers, params)
+	res := utils.Minireq.Get(apiURL, headers, params)
+	resReduce1 := strings.ReplaceAll(string(res.RawData()), "Amb.Ameblo.image.Callback(", "")
 	resReduce2 := strings.ReplaceAll(resReduce1, ");", "")
 
-	resJSON := utils.DataConvert.String2Map([]byte(resReduce2))
+	resJSON := utils.DataSuite.RawMap2Map([]byte(resReduce2))
 	amebloImgList := resJSON["imgList"].([]interface{})
 	for i := 0; i < len(amebloImgList); i++ {
 		amebloImgInfo := amebloImgList[i].(map[string]interface{})
@@ -134,21 +136,26 @@ func mdprAPI(url string) (imgs []interface{}) {
 	if strings.Contains(realURL, "photo") {
 		return
 	}
-	response := utils.Minireq.GetBody(realURL, nil, nil)
-	imgs = utils.DataConvert.String2Array(response)
+	// response := utils.Minireq.GetBody(realURL, nil, nil)
+	// imgs = utils.DataConvert.String2Array(response)
+
+	res := utils.Minireq.Get(realURL)
+	imgs = utils.DataSuite.RawArray2Array(res.RawData())
 	return
 }
 
 // igAPI 抓取网页版数据
 func igAPI(url string) (imgs []interface{}) {
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	res := utils.Minireq.GetBody(url, headers, nil)
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
+
+	res := utils.Minireq.Get(url, headers)
 	igRule := regexp.MustCompile(`<script type="text/javascript">window._sharedData = (.*?);</script>`)
-	igRawData := igRule.FindAllStringSubmatch(string(res), -1)
+	igRawData := igRule.FindAllStringSubmatch(string(res.RawData()), -1)
 	if len(igRawData) != 0 {
 		igRawDataString := igRawData[0][1]
-		igData := utils.DataConvert.String2Map([]byte(igRawDataString))
+		igData := utils.DataSuite.RawMap2Map([]byte(igRawDataString))
 
 		igEntryData := igData["entry_data"].(map[string]interface{})
 		igPostPage := igEntryData["PostPage"].([]interface{})
@@ -197,8 +204,8 @@ func igAPI(url string) (imgs []interface{}) {
 // igAPIWorker
 func igAPIWorker(url string) (imgs []interface{}) {
 	rURL := "https://ins.maruq.workers.dev/?url=" + url
-	res := utils.Minireq.GetBody(rURL, nil, nil)
-	resJSON := utils.DataConvert.String2Map(res)
+	res := utils.Minireq.Get(rURL)
+	resJSON := res.RawJSON().(map[string]interface{})
 	imgs = resJSON["data"].([]interface{})
 	return
 }
@@ -206,10 +213,11 @@ func igAPIWorker(url string) (imgs []interface{}) {
 // imgURLAnalysis 读取 img 标签
 func imgURLAnalysis(imgRule string, taskM *taskManage) {
 	url := <-taskM.GChan
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	res := utils.Minireq.GetBody(url, headers, nil)
-	doc, _ := htmlquery.Parse(strings.NewReader(string(res)))
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
+	res := utils.Minireq.Get(url, headers)
+	doc, _ := htmlquery.Parse(strings.NewReader(string(res.RawData())))
 	nodes := htmlquery.Find(doc, imgRule)
 	for _, node := range nodes {
 		imgSrc := htmlquery.SelectAttr(node, "src")
@@ -222,11 +230,12 @@ func imgURLAnalysis(imgRule string, taskM *taskManage) {
 
 // picRuleProcess 其他新闻网站通过正则处理
 func picRuleProcess(url, urlType, aRule, imgRule string) (imgs []interface{}) {
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	res := utils.Minireq.GetBody(url, headers, nil)
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
+	res := utils.Minireq.Get(url, headers)
 
-	doc, _ := htmlquery.Parse(strings.NewReader(string(res)))
+	doc, _ := htmlquery.Parse(strings.NewReader(string(res.RawData())))
 	// 使用 a 标签的网站
 	if aRule != "" {
 		var imgIndexURLs []string

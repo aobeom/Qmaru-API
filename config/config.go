@@ -7,13 +7,11 @@ import (
 )
 
 var cfgRoot = "config"
-var fileCtl = utils.NewFileCtl()
-var dataConv = utils.NewDataConv()
 
 func readCfg(name string) (d map[string]interface{}) {
-	cfgPath := filepath.Join(fileCtl.LocalPath(Deployment()), cfgRoot, name)
-	if utils.FileCtl.CheckExist(cfgPath) {
-		d = dataConv.String2Map(fileCtl.Read(cfgPath))
+	cfgPath := filepath.Join(utils.FileSuite.LocalPath(Deployment()), cfgRoot, name)
+	if utils.FileSuite.CheckExist(cfgPath) {
+		d = utils.DataSuite.RawMap2Map(utils.FileSuite.Read(cfgPath))
 	} else {
 		log.Panic(cfgPath + " Not Found")
 	}

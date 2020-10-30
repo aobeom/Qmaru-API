@@ -24,25 +24,22 @@ func (f *myLoggerFormat) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 // Logger 日志中间件
-func Logger(mode int) gin.HandlerFunc {
+func Logger(debug bool) gin.HandlerFunc {
 	logger := logrus.New()
 
 	// 输出到文件
-	switch mode {
-	case 0:
+	if debug {
 		logger.Out = os.Stdout
 		logger.SetLevel(logrus.DebugLevel)
-	case 1:
-		currentPath := utils.FileCtl.LocalPath(mode)
+	} else {
+		currentPath := utils.FileSuite.LocalPath(debug)
 		logPath := filepath.Join(currentPath, "logs")
-		logpath := utils.FileCtl.Create(logPath)
+		logpath := utils.FileSuite.Create(logPath)
 		accessPath := filepath.Join(logpath, "access.log")
 		accessFile, _ := os.OpenFile(accessPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend)
 
 		logger.Out = accessFile
 		logger.SetLevel(logrus.InfoLevel)
-	default:
-		log.Fatal("Mode: 0 debug / 1 release")
 	}
 
 	logger.SetFormatter(new(myLoggerFormat))
@@ -76,19 +73,16 @@ func Logger(mode int) gin.HandlerFunc {
 }
 
 // Run 执行服务
-func Run(mode int) {
+func Run(debug bool) {
 	listenAddr := "localhost:8373"
 
 	service.DBTest()
 	log.Println("Listen: " + listenAddr)
 
-	switch mode {
-	case 0:
+	if debug {
 		gin.SetMode(gin.DebugMode)
-	case 1:
+	} else {
 		gin.SetMode(gin.ReleaseMode)
-	default:
-		log.Fatal("Mode: debug / release")
 	}
 
 	router := gin.New()
@@ -100,7 +94,7 @@ func Run(mode int) {
 	router.Use(cors.New(config))
 
 	router.Use(gin.Recovery())
-	router.Use(Logger(mode))
+	router.Use(Logger(debug))
 
 	v1 := router.Group("/api/v1")
 	{

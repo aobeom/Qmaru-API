@@ -1,8 +1,6 @@
 package service
 
 import (
-	"net/http"
-	"net/url"
 	"strings"
 
 	"qmaru-api/config"
@@ -21,18 +19,14 @@ func tweetToken(k, s string) (t string) {
 	// https://developer.twitter.com/en/docs/basics/authentication/api-reference/token
 	oauthAPI := "https://api.twitter.com/oauth2/token"
 
-	headers := make(http.Header)
-	headers.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	data := utils.MiniFormData{
+		"grant_type": "client_credentials",
+	}
 
-	headers.Add("username", k)
-	headers.Add("password", s)
+	auth := utils.MiniAuth{k, s}
 
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	reader := strings.NewReader(data.Encode())
-
-	body := utils.Minireq.PostBody(oauthAPI, headers, reader)
-	bodyJSON := utils.DataConvert.String2Map(body)
+	res := utils.Minireq.Post(oauthAPI, data, auth)
+	bodyJSON := res.RawJSON().(map[string]interface{})
 
 	t = bodyJSON["access_token"].(string)
 	return
@@ -40,16 +34,17 @@ func tweetToken(k, s string) (t string) {
 
 func tweetData(statusID, token string) (vurl string) {
 	showAPI := "https://api.twitter.com/1.1/statuses/show.json"
-	headers := make(http.Header)
-	headers.Add("Authorization", "Bearer "+token)
+	headers := utils.MiniHeaders{
+		"Authorization": "Bearer " + token,
+	}
 
-	params := make(map[string]string)
-	params["id"] = statusID
-	params["tweet_mode"] = "extended"
+	params := utils.MiniParams{
+		"id":         statusID,
+		"tweet_mode": "extended",
+	}
 
-	res := utils.Minireq.GetBody(showAPI, headers, params)
-
-	resJSON := utils.DataConvert.String2Map(res)
+	res := utils.Minireq.Get(showAPI, headers, params)
+	resJSON := res.RawJSON().(map[string]interface{})
 
 	if _, ok := resJSON["extended_entities"]; ok {
 		tweetExtendedEntities := resJSON["extended_entities"].(map[string]interface{})

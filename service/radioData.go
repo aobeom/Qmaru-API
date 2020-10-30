@@ -92,15 +92,17 @@ func radikoAAC(m3u8 string) (urls []string) {
 // radikoAuth1 获取 token / offset / length
 func radikoAuth1() (token string, offset int64, length int64) {
 	auth1URL := "https://radiko.jp/v2/api/auth1"
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	headers.Add("x-radiko-device", XRadikoDevice)
-	headers.Add("x-radiko-user", XRadikoUser)
-	headers.Add("x-radiko-app", XRadikoApp)
-	headers.Add("x-radiko-app-version", XRadikoAppVersion)
+	headers := utils.MiniHeaders{
+		"User-Agent":           utils.UserAgent,
+		"x-radiko-device":      XRadikoDevice,
+		"x-radiko-user":        XRadikoUser,
+		"x-radiko-app":         XRadikoApp,
+		"x-radiko-app-version": XRadikoAppVersion,
+	}
 
-	res := miniReq.GetRes(auth1URL, headers, nil)
-	resHeader := res.Header
+	res := utils.Minireq.Get(auth1URL, headers)
+	resHeader := res.RawRes.Header
+
 	token = resHeader.Get("X-Radiko-AuthToken")
 	Keyoffset := resHeader.Get("X-Radiko-Keyoffset")
 	Keylength := resHeader.Get("X-Radiko-Keylength")
@@ -113,15 +115,16 @@ func radikoAuth1() (token string, offset int64, length int64) {
 func radikoAuth2(token string, partialkey string) (areaid string) {
 	auth2URL := "https://radiko.jp/v2/api/auth2"
 
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	headers.Add("x-radiko-device", XRadikoDevice)
-	headers.Add("x-radiko-user", XRadikoUser)
-	headers.Add("x-radiko-authtoken", token)
-	headers.Add("x-radiko-partialkey", partialkey)
+	headers := utils.MiniHeaders{
+		"User-Agent":          utils.UserAgent,
+		"x-radiko-device":     XRadikoDevice,
+		"x-radiko-user":       XRadikoUser,
+		"x-radiko-authtoken":  token,
+		"x-radiko-partialkey": partialkey,
+	}
 
-	body := miniReq.GetBody(auth2URL, headers, nil)
-	areaSplit := strings.Split(string(body), ",")
+	res := utils.Minireq.Get(auth2URL, headers)
+	areaSplit := strings.Split(string(res.RawData()), ",")
 	areaid = areaSplit[0]
 	return
 }
@@ -130,28 +133,31 @@ func radikoAuth2(token string, partialkey string) (areaid string) {
 func radikoHLS(token string, areaid string, radioData *RadioData) (aacURLs []string) {
 	playlistURL := "https://radiko.jp/v2/api/ts/playlist.m3u8"
 
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	headers.Add("X-Radiko-AuthToken", token)
-	headers.Add("X-Radiko-AreaId", areaid)
+	headers := utils.MiniHeaders{
+		"User-Agent":         utils.UserAgent,
+		"X-Radiko-AuthToken": token,
+		"X-Radiko-AreaId":    areaid,
+	}
 
-	params := make(map[string]string)
-	params["station_id"] = radioData.stationID
-	params["start_at"] = radioData.startAt
-	params["ft"] = radioData.ft
-	params["end_at"] = radioData.endAt
-	params["to"] = radioData.to
-	params["l"] = radioData.l
-	params["type"] = radioData.rtype
+	params := utils.MiniParams{
+		"station_id": radioData.stationID,
+		"start_at":   radioData.startAt,
+		"ft":         radioData.ft,
+		"end_at":     radioData.endAt,
+		"to":         radioData.to,
+		"l":          radioData.l,
+		"type":       radioData.rtype,
+	}
 
-	chunklistBody := miniReq.GetBody(playlistURL, headers, params)
-	chunklistURL := radikoChunklist(string(chunklistBody))
+	chunklistRes := utils.Minireq.Get(playlistURL, headers, params)
+	chunklistURL := radikoChunklist(string(chunklistRes.RawData()))
 
-	m3u8ReqHeaders := make(http.Header)
-	m3u8ReqHeaders.Add("User-Agent", utils.UserAgent)
+	m3u8ReqHeaders := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
 
-	m3u8Body := miniReq.GetBody(chunklistURL, m3u8ReqHeaders, nil)
-	aacURLs = radikoAAC(string(m3u8Body))
+	m3u8Res := utils.Minireq.Get(chunklistURL, m3u8ReqHeaders)
+	aacURLs = radikoAAC(string(m3u8Res.RawData()))
 	if len(aacURLs) == 0 {
 		aacURLs = []string{}
 	}
@@ -160,12 +166,13 @@ func radikoHLS(token string, areaid string, radioData *RadioData) (aacURLs []str
 
 // rThread 并发下载
 func rThread(url string, ch chan []byte, dl *DLServer) {
-	headers := make(http.Header)
-	headers.Add("User-Agent", utils.UserAgent)
-	body := miniReq.GetBody(url, headers, nil)
+	headers := utils.MiniHeaders{
+		"User-Agent": utils.UserAgent,
+	}
+	res := utils.Minireq.Get(url, headers)
 	dl.WG.Done()
 	<-dl.Gonum
-	ch <- body
+	ch <- res.RawData()
 }
 
 // rEngine 下载器
@@ -246,16 +253,19 @@ func RadioGet(fileName, station, startAt, endAt string) (dlurl string) {
 	token, offset, length := radikoAuth1()
 	partialkey := encodeKey(authkey, offset, length)
 	area := radikoAuth2(token, partialkey)
-	aacURLs := radikoHLS(token, area, radioData)
-
-	if len(aacURLs) != 0 {
-		mediaInfo := config.MediaCfg()
-		mediaPath := mediaInfo["media_path"].(string)
-		wwwPath := mediaInfo["www_path"].(string)
-
-		savePath := filepath.Join(mediaPath, fileName)
-		rEngine(aacURLs, savePath)
-		dlurl = filepath.Join(wwwPath, fileName)
+	if area != "OUT" {
+		aacURLs := radikoHLS(token, area, radioData)
+		if len(aacURLs) != 0 {
+			mediaInfo := config.MediaCfg()
+			mediaPath := mediaInfo["media_path"].(string)
+			wwwPath := mediaInfo["www_path"].(string)
+	
+			savePath := filepath.Join(mediaPath, fileName)
+			rEngine(aacURLs, savePath)
+			dlurl = filepath.Join(wwwPath, fileName)
+		} else {
+			dlurl = ""
+		}
 	} else {
 		dlurl = ""
 	}
