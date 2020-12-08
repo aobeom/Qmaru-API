@@ -79,6 +79,17 @@ func Media(c *gin.Context) {
 				DataHandler(c, 1, "This url has no video", []interface{}{})
 			}
 		}
+	case "y2b":
+		filename := service.Y2BDownload(url)
+		if strings.Contains(filename, ".mp4") {
+			data := map[string]interface{}{
+				"type":     mtype,
+				"entities": filename,
+			}
+			DataHandler(c, 0, "This is a Y2B Video url", data)
+		} else {
+			DataHandler(c, 1, "This url has no video", []interface{}{})
+		}
 	default:
 		DataHandler(c, 1, "The type is not supported", []interface{}{})
 	}
