@@ -5,10 +5,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/antchfx/htmlquery"
-	"go.mongodb.org/mongo-driver/bson"
 	"qmaru-api/config"
 	"qmaru-api/utils"
+
+	"github.com/antchfx/htmlquery"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type mediaJSON struct {
@@ -203,10 +204,21 @@ func igAPI(url string) (imgs []interface{}) {
 
 // igAPIWorker
 func igAPIWorker(url string) (imgs []interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			return
+		}
+	}()
 	rURL := "https://ins.maruq.workers.dev/?url=" + url
 	res := utils.Minireq.Get(rURL)
-	resJSON := res.RawJSON().(map[string]interface{})
-	imgs = resJSON["data"].([]interface{})
+	resJSON := res.RawJSON()
+	if resJSON != nil {
+		data := resJSON.(map[string]interface{})
+		if _, ok := data["data"]; ok {
+			imgs = data["data"].([]interface{})
+			return
+		}
+	}
 	return
 }
 
