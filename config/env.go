@@ -1,6 +1,6 @@
 package config
 
-var mode int = 0
+var mode int = 1
 
 // Deployment 部署模式 0: debug 1: release
 func Deployment() bool {
